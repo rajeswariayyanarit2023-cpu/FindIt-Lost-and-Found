@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FindIt – Lost & Found Management Portal{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="hero-title">Lost Something?<br>Found Something?<br><span style="color: #93c5fd;">We'll Help Reunite.</span></h1>
+                <p class="hero-subtitle">
+                    FindIt is a community-driven platform where you can report lost or found items,
+                    search through listings, and submit claims to recover your belongings.
+                </p>
+                <div class="hero-actions d-flex flex-wrap gap-3">
+                    <a href="{% url 'report_item' %}?type=lost" class="btn btn-light btn-lg text-primary">
+                        <i class="bi bi-exclamation-circle me-2"></i>Report Lost Item
+                    </a>
+                    <a href="{% url 'report_item' %}?type=found" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-hand-thumbs-up me-2"></i>Report Found Item
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <div style="font-size: 10rem; opacity: 0.15; line-height: 1;">
+                    <i class="bi bi-search-heart"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-card animate-in">
+                    <div class="stat-icon lost">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-number">{{ total_lost }}</div>
+                    <div class="stat-label">Lost Items</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card animate-in">
+                    <div class="stat-icon found">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="stat-number">{{ total_found }}</div>
+                    <div class="stat-label">Found Items</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card animate-in">
+                    <div class="stat-icon returned">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="stat-number">{{ total_returned }}</div>
+                    <div class="stat-label">Returned</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card animate-in">
+                    <div class="stat-icon users">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="stat-number">{{ total_users }}</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Lost Items -->
+<section class="py-5">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Recently Reported Lost</h2>
+            <a href="{% url 'item_list' %}?item_type=lost" class="btn btn-light-primary">
+                View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for item in recent_lost %}
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'item_detail' pk=item.pk %}" class="text-decoration-none">
+                    <div class="item-card animate-in">
+                        <div class="card-img-wrapper">
+                            {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                            {% else %}
+                            <div class="placeholder-img">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            {% endif %}
+                            <span class="type-badge badge-status badge-lost">Lost</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text">{{ item.description|truncatewords:15 }}</p>
+                            <div class="item-meta">
+                                <span><i class="bi bi-geo-alt"></i> {{ item.location|truncatewords:4 }}</span>
+                                <span><i class="bi bi-calendar3"></i> {{ item.date_lost_found|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No lost items reported yet</h4>
+                    <p>Be the first to report a lost item and let the community help you find it.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Recent Found Items -->
+<section class="py-5" style="background: var(--gray-100);">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Recently Found Items</h2>
+            <a href="{% url 'item_list' %}?item_type=found" class="btn btn-light-primary">
+                View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for item in recent_found %}
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'item_detail' pk=item.pk %}" class="text-decoration-none">
+                    <div class="item-card animate-in">
+                        <div class="card-img-wrapper">
+                            {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                            {% else %}
+                            <div class="placeholder-img">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            {% endif %}
+                            <span class="type-badge badge-status badge-found">Found</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text">{{ item.description|truncatewords:15 }}</p>
+                            <div class="item-meta">
+                                <span><i class="bi bi-geo-alt"></i> {{ item.location|truncatewords:4 }}</span>
+                                <span><i class="bi bi-calendar3"></i> {{ item.date_lost_found|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No found items reported yet</h4>
+                    <p>Found something? Report it here and help someone recover their belongings.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center" style="max-width: 700px; margin: 0 auto;">
+            <h2 style="font-weight: 800; font-size: 2rem; color: var(--dark);">How FindIt Works</h2>
+            <p class="text-muted mb-5">Three simple steps to recover your lost belongings</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card text-center animate-in">
+                    <div class="stat-icon" style="background: #dbeafe; color: #2563eb;">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h5 class="mt-3 fw-bold">1. Report</h5>
+                    <p class="text-muted">Report your lost or found item with details like description, location, and photo.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card text-center animate-in">
+                    <div class="stat-icon" style="background: #fef3c7; color: #d97706;">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5 class="mt-3 fw-bold">2. Search & Claim</h5>
+                    <p class="text-muted">Browse listings, find matching items, and submit a claim with proof of ownership.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card text-center animate-in">
+                    <div class="stat-icon" style="background: #d1fae5; color: #059669;">
+                        <i class="bi bi-hand-thumbs-up"></i>
+                    </div>
+                    <h5 class="mt-3 fw-bold">3. Recover</h5>
+                    <p class="text-muted">Once approved by an admin, coordinate with the finder/reporter to get your item back.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

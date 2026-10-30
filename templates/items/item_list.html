@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Items – FindIt{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-grid me-2"></i>Browse Items</h1>
+        <p>Search and filter through all lost and found items</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" action="{% url 'item_list' %}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label"><i class="bi bi-search me-1"></i>Search</label>
+                    <input type="text" name="query" class="form-control" placeholder="Search by name, description, location..." value="{{ query }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <select name="item_type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="lost" {% if selected_type == 'lost' %}selected{% endif %}>Lost</option>
+                        <option value="found" {% if selected_type == 'found' %}selected{% endif %}>Found</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.pk }}" {% if selected_category == cat.pk|slugify %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Lost</option>
+                        <option value="found" {% if selected_status == 'found' %}selected{% endif %}>Found</option>
+                        <option value="claim_pending" {% if selected_status == 'claim_pending' %}selected{% endif %}>Claim Pending</option>
+                        <option value="returned" {% if selected_status == 'returned' %}selected{% endif %}>Returned</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results count -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">
+            <strong>{{ total_results }}</strong> item{{ total_results|pluralize }} found
+            {% if query %} for "<strong>{{ query }}</strong>"{% endif %}
+        </p>
+        {% if query or selected_type or selected_category or selected_status %}
+        <a href="{% url 'item_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i>Clear Filters
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Item Grid -->
+    <div class="row g-4">
+        {% for item in page_obj %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'item_detail' pk=item.pk %}" class="text-decoration-none">
+                <div class="item-card">
+                    <div class="card-img-wrapper">
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                        {% else %}
+                        <div class="placeholder-img">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        {% endif %}
+                        <span class="type-badge badge-status badge-{{ item.item_type }}">{{ item.get_item_type_display }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ item.name }}</h5>
+                            <span class="badge-status badge-{{ item.status }}">{{ item.get_status_display }}</span>
+                        </div>
+                        <p class="card-text">{{ item.description|truncatewords:12 }}</p>
+                        <div class="item-meta">
+                            <span><i class="bi bi-geo-alt"></i> {{ item.location|truncatewords:3 }}</span>
+                            <span><i class="bi bi-calendar3"></i> {{ item.date_lost_found|date:"M d" }}</span>
+                            <span><i class="bi bi-person"></i> {{ item.user.first_name|default:item.user.username }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <h4>No items found</h4>
+                <p>Try adjusting your search filters or report a new item.</p>
+                <a href="{% url 'report_item' %}" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle me-1"></i>Report Item
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if selected_type %}&item_type={{ selected_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if query %}&query={{ query }}{% endif %}{% if selected_type %}&item_type={{ selected_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if selected_type %}&item_type={{ selected_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

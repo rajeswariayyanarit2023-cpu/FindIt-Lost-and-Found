@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Claim – FindIt Admin{% endblock %}
+
+{% block content %}
+<div class="page-header" style="background: linear-gradient(135deg, #1e1b4b, #4338ca);">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin</a></li>
+                <li class="breadcrumb-item active">Review Claim</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-clipboard-check me-2"></i>Review Claim</h1>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row g-4">
+        <!-- Claim Details -->
+        <div class="col-lg-8">
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Claim Details</h5>
+                        <span class="badge-status badge-{{ claim.status }}" style="font-size: 0.9rem;">{{ claim.get_status_display }}</span>
+                    </div>
+                </div>
+                <div class="review-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="text-muted small text-uppercase fw-semibold">Claimant</label>
+                            <p class="fw-bold mb-0">{{ claim.claimant.get_full_name|default:claim.claimant.username }}</p>
+                            <small class="text-muted">{{ claim.claimant.email }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small text-uppercase fw-semibold">Contact Info</label>
+                            <p class="fw-bold mb-0">{{ claim.contact_info }}</p>
+                        </div>
+                        <div class="col-12">
+                            <label class="text-muted small text-uppercase fw-semibold">Claim Description</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ claim.description }}</p>
+                        </div>
+                        {% if claim.proof_image %}
+                        <div class="col-12">
+                            <label class="text-muted small text-uppercase fw-semibold">Proof Image</label>
+                            <div>
+                                <img src="{{ claim.proof_image.url }}" alt="Proof" class="img-thumbnail" style="max-height: 300px;">
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-12">
+                            <label class="text-muted small text-uppercase fw-semibold">Submitted</label>
+                            <p class="mb-0">{{ claim.created_at|date:"F d, Y \a\t g:i A" }} ({{ claim.created_at|timesince }} ago)</p>
+                        </div>
+                    </div>
+
+                    {% if claim.status == 'pending' %}
+                    <hr>
+                    <h5 class="fw-bold mb-3">Admin Decision</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="admin_notes" class="form-label">Admin Notes (optional)</label>
+                            <textarea name="admin_notes" id="admin_notes" class="form-control" rows="3"
+                                placeholder="Add notes about your decision...">{{ claim.admin_notes }}</textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="action" value="approve" class="btn btn-success btn-lg"
+                                onclick="return confirm('Approve this claim? The item will be marked as Returned and other pending claims will be rejected.');">
+                                <i class="bi bi-check-circle me-1"></i>Approve Claim
+                            </button>
+                            <button type="submit" name="action" value="reject" class="btn btn-danger btn-lg"
+                                onclick="return confirm('Reject this claim?');">
+                                <i class="bi bi-x-circle me-1"></i>Reject Claim
+                            </button>
+                        </div>
+                    </form>
+                    {% elif claim.admin_notes %}
+                    <hr>
+                    <h6 class="fw-bold">Admin Notes</h6>
+                    <p class="text-muted">{{ claim.admin_notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Info Sidebar -->
+        <div class="col-lg-4">
+            <div class="dashboard-card">
+                <h5 class="fw-bold mb-3"><i class="bi bi-box me-2"></i>Claimed Item</h5>
+                {% if claim.item.image %}
+                <img src="{{ claim.item.image.url }}" alt="{{ claim.item.name }}" class="img-fluid rounded mb-3" style="max-height: 200px; width: 100%; object-fit: cover;">
+                {% endif %}
+                <h6 class="fw-bold">{{ claim.item.name }}</h6>
+                <div class="mb-2">
+                    <span class="badge-status badge-{{ claim.item.item_type }}">{{ claim.item.get_item_type_display }}</span>
+                    <span class="badge-status badge-{{ claim.item.status }}">{{ claim.item.get_status_display }}</span>
+                </div>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted">Location</td>
+                        <td>{{ claim.item.location }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Date</td>
+                        <td>{{ claim.item.date_lost_found|date:"M d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Reporter</td>
+                        <td>{{ claim.item.user.get_full_name|default:claim.item.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Claims</td>
+                        <td>{{ claim.item.claims.count }}</td>
+                    </tr>
+                </table>
+                <a href="{% url 'item_detail' pk=claim.item.pk %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
+                    <i class="bi bi-eye me-1"></i>View Item
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

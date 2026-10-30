@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard – FindIt{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-speedometer2 me-2"></i>My Dashboard</h1>
+        <p>Welcome back, {{ user.first_name|default:user.username }}! Manage your reports and claims.</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card dashboard-stat">
+                <div class="stat-value">{{ total_items }}</div>
+                <div class="stat-label">My Reports</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card dashboard-stat">
+                <div class="stat-value" style="color: var(--danger);">{{ lost_count }}</div>
+                <div class="stat-label">Lost Items</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card dashboard-stat">
+                <div class="stat-value" style="color: var(--success);">{{ found_count }}</div>
+                <div class="stat-label">Found Items</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card dashboard-stat">
+                <div class="stat-value" style="color: var(--warning);">{{ pending_claims }}</div>
+                <div class="stat-label">Pending Claims</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{% url 'report_item' %}?type=lost" class="btn btn-primary">
+            <i class="bi bi-exclamation-circle me-1"></i>Report Lost Item
+        </a>
+        <a href="{% url 'report_item' %}?type=found" class="btn btn-success">
+            <i class="bi bi-hand-thumbs-up me-1"></i>Report Found Item
+        </a>
+        <a href="{% url 'item_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-search me-1"></i>Browse Items
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- My Items -->
+        <div class="col-lg-7">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-box me-2"></i>My Reports</h5>
+                    <span class="text-muted">{{ total_items }} item{{ total_items|pluralize }}</span>
+                </div>
+
+                {% if user_items %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in user_items %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'item_detail' pk=item.pk %}" class="fw-semibold text-dark text-decoration-none">
+                                        {{ item.name|truncatewords:4 }}
+                                    </a>
+                                </td>
+                                <td><span class="badge-status badge-{{ item.item_type }}">{{ item.get_item_type_display }}</span></td>
+                                <td><span class="badge-status badge-{{ item.status }}">{{ item.get_status_display }}</span></td>
+                                <td class="text-muted">{{ item.date_lost_found|date:"M d" }}</td>
+                                <td>
+                                    <a href="{% url 'edit_item' pk=item.pk %}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'delete_item' pk=item.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No reports yet</h4>
+                    <p>Start by reporting a lost or found item.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- My Claims -->
+        <div class="col-lg-5">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-hand-index me-2"></i>My Claims</h5>
+                    <span class="text-muted">{{ user_claims.count }} claim{{ user_claims.count|pluralize }}</span>
+                </div>
+
+                {% if user_claims %}
+                {% for claim in user_claims %}
+                <div class="p-3 mb-2 rounded" style="background: var(--gray-50); border: 1px solid var(--gray-200);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <a href="{% url 'item_detail' pk=claim.item.pk %}" class="fw-bold text-dark text-decoration-none">
+                                {{ claim.item.name|truncatewords:4 }}
+                            </a>
+                            <p class="mb-0 small text-muted">{{ claim.created_at|timesince }} ago</p>
+                        </div>
+                        <span class="badge-status badge-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                    </div>
+                    {% if claim.admin_notes %}
+                    <p class="mt-2 mb-0 small"><strong>Admin:</strong> {{ claim.admin_notes|truncatewords:10 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-hand-index"></i>
+                    <h4>No claims yet</h4>
+                    <p>Browse items and submit a claim when you find a match.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

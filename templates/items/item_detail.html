@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ item.name }} – FindIt{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'item_list' %}">Items</a></li>
+                <li class="breadcrumb-item active">{{ item.name }}</li>
+            </ol>
+        </nav>
+        <h1>{{ item.name }}</h1>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row g-4">
+        <!-- Item Details -->
+        <div class="col-lg-8">
+            <div class="detail-section">
+                {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="detail-image">
+                {% endif %}
+                <div class="detail-content">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span class="badge-status badge-{{ item.item_type }}" style="font-size: 0.9rem;">
+                            {% if item.item_type == 'lost' %}
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            {% else %}
+                            <i class="bi bi-check-circle me-1"></i>
+                            {% endif %}
+                            {{ item.get_item_type_display }}
+                        </span>
+                        <span class="badge-status badge-{{ item.status }}" style="font-size: 0.9rem;">
+                            {{ item.get_status_display }}
+                        </span>
+                    </div>
+
+                    <h1>{{ item.name }}</h1>
+
+                    <div class="detail-meta">
+                        <div class="meta-item">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <span>{{ item.location }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span>{{ item.date_lost_found|date:"F d, Y" }}</span>
+                        </div>
+                        {% if item.category %}
+                        <div class="meta-item">
+                            <i class="bi bi-tag"></i>
+                            <span>{{ item.category.name }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="meta-item">
+                            <i class="bi bi-person"></i>
+                            <span>Reported by {{ item.user.get_full_name|default:item.user.username }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="bi bi-clock"></i>
+                            <span>Posted {{ item.created_at|timesince }} ago</span>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-2">Description</h5>
+                    <p style="white-space: pre-wrap; color: var(--gray-600); line-height: 1.8;">{{ item.description }}</p>
+                </div>
+            </div>
+
+            <!-- Claims Section (visible to item owner and staff) -->
+            {% if claims %}
+            <div class="mt-4">
+                <h4 class="section-title mb-3">Claims ({{ claims.count }})</h4>
+                {% for claim in claims %}
+                <div class="dashboard-card mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                <i class="bi bi-person-circle me-1"></i>
+                                {{ claim.claimant.get_full_name|default:claim.claimant.username }}
+                            </h6>
+                            <small class="text-muted">Submitted {{ claim.created_at|timesince }} ago</small>
+                        </div>
+                        <span class="badge-status badge-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                    </div>
+                    <p class="mb-2" style="color: var(--gray-600);">{{ claim.description }}</p>
+                    <p class="mb-1"><strong>Contact:</strong> {{ claim.contact_info }}</p>
+                    {% if claim.proof_image %}
+                    <div class="mt-2">
+                        <img src="{{ claim.proof_image.url }}" alt="Proof" class="img-thumbnail" style="max-height: 150px;">
+                    </div>
+                    {% endif %}
+                    {% if claim.admin_notes %}
+                    <div class="mt-2 p-2 rounded" style="background: var(--gray-50);">
+                        <small class="text-muted"><strong>Admin Notes:</strong> {{ claim.admin_notes }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="dashboard-card mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-lightning me-2"></i>Actions</h5>
+
+                {% if user.is_authenticated %}
+                    {% if user == item.user %}
+                    <!-- Owner actions -->
+                    <a href="{% url 'edit_item' pk=item.pk %}" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-pencil me-1"></i>Edit Report
+                    </a>
+                    <a href="{% url 'delete_item' pk=item.pk %}" class="btn btn-outline-danger w-100 mb-2">
+                        <i class="bi bi-trash me-1"></i>Delete Report
+                    </a>
+                    {% else %}
+                        {% if item.status != 'returned' %}
+                            {% if user_has_claimed %}
+                            <div class="claim-info-card mb-2">
+                                <i class="bi bi-check-circle text-primary me-1"></i>
+                                <strong>You've submitted a claim</strong>
+                                <p class="mb-0 mt-1 small text-muted">An admin will review it and notify you.</p>
+                            </div>
+                            {% else %}
+                            <a href="{% url 'submit_claim' item_pk=item.pk %}" class="btn btn-success w-100 mb-2">
+                                <i class="bi bi-hand-index me-1"></i>Submit a Claim
+                            </a>
+                            {% endif %}
+                        {% else %}
+                        <div class="claim-info-card mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-1"></i>
+                            <strong>This item has been returned</strong>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Login to Submit a Claim
+                </a>
+                {% endif %}
+
+                {% if user.is_staff %}
+                <hr>
+                <h6 class="fw-bold mb-2"><i class="bi bi-shield-check me-1"></i>Admin Actions</h6>
+                <form method="post" action="{% url 'admin_update_item_status' pk=item.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="lost" {% if item.status == 'lost' %}selected{% endif %}>Lost</option>
+                            <option value="found" {% if item.status == 'found' %}selected{% endif %}>Found</option>
+                            <option value="claim_pending" {% if item.status == 'claim_pending' %}selected{% endif %}>Claim Pending</option>
+                            <option value="returned" {% if item.status == 'returned' %}selected{% endif %}>Returned</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-arrow-repeat me-1"></i>Update Status
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Item Info Card -->
+            <div class="dashboard-card">
+                <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Item Info</h5>
+                <table class="table table-borderless table-sm mb-0">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 40%;">Type</td>
+                        <td>{{ item.get_item_type_display }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Status</td>
+                        <td><span class="badge-status badge-{{ item.status }}">{{ item.get_status_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Category</td>
+                        <td>{{ item.category.name|default:"Uncategorized" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Date</td>
+                        <td>{{ item.date_lost_found|date:"M d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Location</td>
+                        <td>{{ item.location }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Reporter</td>
+                        <td>{{ item.user.get_full_name|default:item.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Posted</td>
+                        <td>{{ item.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% if item.claims.count > 0 %}
+                    <tr>
+                        <td class="text-muted fw-semibold">Claims</td>
+                        <td>{{ item.claims.count }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
