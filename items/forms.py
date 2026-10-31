@@ -1,9 +1,16 @@
 from django import forms
-from .models import Item, Claim
+from .models import Category, Item, Claim
 
 
 class ItemForm(forms.ModelForm):
     """Form for creating and editing lost/found item reports."""
+
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.order_by('name'),
+        required=False,
+        empty_label='Select Category',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
 
     date_lost_found = forms.DateField(
         widget=forms.DateInput(
@@ -21,9 +28,6 @@ class ItemForm(forms.ModelForm):
                 'placeholder': 'e.g. Blue Backpack, iPhone 14, Keys...'
             }),
             'item_type': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'category': forms.Select(attrs={
                 'class': 'form-select',
             }),
             'description': forms.Textarea(attrs={
@@ -139,8 +143,10 @@ class ItemSearchForm(forms.Form):
         choices=[('', 'All Types'), ('lost', 'Lost'), ('found', 'Found')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    category = forms.CharField(
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.order_by('name'),
         required=False,
+        empty_label='All Categories',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     status = forms.ChoiceField(

@@ -29,12 +29,7 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Category</label>
-                    <select name="category" class="form-select">
-                        <option value="">All Categories</option>
-                        {% for cat in categories %}
-                        <option value="{{ cat.pk }}" {% if selected_category == cat.pk|slugify %}selected{% endif %}>{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
+                    {{ form.category }}
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Status</label>

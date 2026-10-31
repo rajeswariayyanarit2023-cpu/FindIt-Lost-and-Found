@@ -6,7 +6,7 @@ from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 
-from .models import Item, Claim, Notification, Category
+from .models import Item, Claim, Notification
 from .forms import ItemForm, ItemEditForm, ClaimForm, ItemSearchForm
 
 
@@ -33,12 +33,13 @@ def home(request):
 def item_list(request):
     """List all items with search and filtering."""
     items = Item.objects.select_related('user', 'category').all()
-    categories = Category.objects.all()
     form = ItemSearchForm(request.GET)
+    form.is_valid()
 
     query = request.GET.get('query', '').strip()
     item_type = request.GET.get('item_type', '').strip()
-    category_id = request.GET.get('category', '').strip()
+    category = form.cleaned_data.get('category')
+    category_id = str(category.pk) if category else ''
     status = request.GET.get('status', '').strip()
 
     if query:
@@ -49,8 +50,8 @@ def item_list(request):
         )
     if item_type:
         items = items.filter(item_type=item_type)
-    if category_id:
-        items = items.filter(category_id=category_id)
+    if category:
+        items = items.filter(category=category)
     if status:
         items = items.filter(status=status)
 
@@ -61,7 +62,6 @@ def item_list(request):
     context = {
         'page_obj': page_obj,
         'form': form,
-        'categories': categories,
         'query': query,
         'selected_type': item_type,
         'selected_category': category_id,
